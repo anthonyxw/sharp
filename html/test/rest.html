@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>接口测试页面</title>
+    <link type="text/css" href="main.css" rel="stylesheet" />
+    <link type="text/css" href="jquery-ui.css" rel="stylesheet" />
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery-ui.js"></script>
+    <script type="text/javascript" src="json2.js"></script>
+    <script type="text/javascript" src="y_func.js"></script>
+    <script type="text/javascript" src="y_effect.js"></script>
+    <script type="text/javascript" src="x_common.js"></script>
+    <script type="text/javascript" src="x_form.js"></script>
+    <script>
+        function doCall(frmid, restful, callback){
+            var frm = new autoForm("#" + frmid);
+            var bean = frm.toBean();
+            var jsonstr = JSON.stringify(bean);
+            $("#cond").val(jsonstr);
+            $.ajax({
+                type: "post",
+                url: "../../service/" + restful,
+                data: jsonstr,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async : false,
+                success: function(data, textStatus){
+                    $("#result").val(JSON.stringify(data));
+                    if (data.result == 0 && restful.endWith("/login")) {
+                        var user = JSON.parse(data.message);
+                        if (user.token) $("#token").val(user.token);
+                    }
+                    if (callback)
+                        callback();
+                    else
+                        $("#divTip").dialog("open");
+                }
+            });
+            return false;
+        }
+
+        function tokenCall(frmid, restful) {
+            var token = $("#token").val();
+            if (token == "")
+                doCall("frm917", "admin/login", function() {
+                    anyCall(frmid, restful);
+                });
+            else
+                anyCall(frmid, restful);
+            return false;
+        }
+
+        function anyCall(frmid, restful) {
+            if (frmid.endWith("-data")) {
+                fileCall(frmid, restful);
+                return;
+            }
+            var token = $("#token").val();
+            var frm = new autoForm("#" + frmid);
+            var bean = frm.toBean();
+            var jsonstr = JSON.stringify(bean);
+            $("#cond").val(jsonstr);
+            $.ajax({
+                type: "post",
+                url: "../../service/" + restful,
+                data: jsonstr,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async : false,
+                beforeSend: function(request) {
+                    request.setRequestHeader("User-Token", token);
+                },
+                success: function(data, textStatus){
+                    $("#result").val(JSON.stringify(data));
+                    $("#divTip").dialog("open");
+                    if (restful.indexOf("logout") > 0)
+                        $("#token").val("");
+                }
+            });
+            return false;
+        }
+
+        function fileCall(frmid, restful) {
+            var token = $("#token").val();
+            var formData = new FormData($("#" + frmid)[0]);
+            $("#cond").val(JSON.stringify($("#" + frmid).serializeObject()));
+            $.ajax({
+                type: "post",
+                url: "../../service/" + restful,
+                data: formData,
+                contentType: false,
+                processData: false,
+                async : false,
+                cache : false,
+                beforeSend: function(request) {
+                    request.setRequestHeader("User-Token", token);
+                },
+                success: function(data, textStatus){
+                    $("#result").val(JSON.stringify(data));
+                    $("#divTip").dialog("open");
+                }
+            });
+            return false;
+        }
+
+        $(document).ready(function(){
+            initToggle();
+            $("#divTip").dialog({
+                autoOpen : false,
+                height : 450,
+                width : 930,
+                modal : true,
+                buttons : {}
+            });
+        });
+    </script>
+</head>
+<body>
+<h1>接口变更：<a href="http://note.youdao.com/noteshare?id=6c2536c40f3618b2afa3a50a390f20ea">http://note.youdao.com/noteshare?id=6c2536c40f3618b2afa3a50a390f20ea</a></h1><br>
+<div id="divTip" title="&nbsp;" style="display:none;">
+<table class="list-data">
+    <tr valign="top">
+    <td><input type="text" id="token" name="token" value="" size="60"/></td>
+    </tr>
+    <tr valign="top">
+    <td><textarea name="cond" id="cond" rows="3" cols="120"></textarea></td>
+    </tr>
+    <tr valign="top">
+    <td><textarea name="result" id="result" rows="18" cols="120"></textarea></td>
+    </tr>
+</table>
+</div>
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.1管理员查询：http://139.196.50.25:8080/cloudisplay/service/admin/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm911">
+    当前页码(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    页面条数(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    角色id(roleid)：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    检索条件，支持truename、email、address(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    <button onclick="tokenCall('frm911', 'admin/list');return false">管理员查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.2查看管理员信息：http://139.196.50.25:8080/cloudisplay/service/admin/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm912">
+    管理员id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    <button onclick="tokenCall('frm912', 'admin/detail');return false">查看管理员信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.3新建管理员：http://139.196.50.25:8080/cloudisplay/service/admin/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm913">
+    登录名(loginname)<font color=red>*</font>：<input type="text" id="txtloginname" name="txtloginname" value="admin"/>
+    默认密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    当前用户角色(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    真实姓名(truename)：<input type="text" id="txttruename" name="txttruename" value=""/>
+    手机号码(mobileno)：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    电子邮箱(email)：<input type="text" id="txtemail" name="txtemail" value=""/>
+    地址(address)：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    <button onclick="tokenCall('frm913', 'admin/new');return false">新建管理员</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.4修改管理员信息：http://139.196.50.25:8080/cloudisplay/service/admin/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm914">
+    管理员id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    真实姓名(truename)：<input type="text" id="txttruename" name="txttruename" value=""/>
+    手机号码(mobileno)：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    电子邮箱(email)：<input type="text" id="txtemail" name="txtemail" value=""/>
+    地址(address)：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    <button onclick="tokenCall('frm914', 'admin/update');return false">修改管理员信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.5修改管理员密码：http://139.196.50.25:8080/cloudisplay/service/admin/updatepassword</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm915">
+    管理员id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    旧密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    新密码(newpass)<font color=red>*</font>：<input type="text" id="txtnewpass" name="txtnewpass" value="123456"/>
+    <button onclick="tokenCall('frm915', 'admin/updatepassword');return false">修改管理员密码</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.6设置管理员权限：http://139.196.164.43:8080service/admin/updaterole</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm916">
+    管理员id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    权限角色(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    <button onclick="tokenCall('frm916', 'admin/updaterole');return false">设置管理员权限</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.7管理员登录：http://139.196.50.25:8080/cloudisplay/service/admin/login</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm917">
+    登录名(loginname)<font color=red>*</font>：<input type="text" id="txtloginname" name="txtloginname" value="admin"/>
+    密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    <button onclick="doCall('frm917', 'admin/login');return false">管理员登录</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.8管理员退出登录：http://139.196.50.25:8080/cloudisplay/service/admin/logout</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm918">
+    <button onclick="tokenCall('frm918', 'admin/logout');return false">管理员退出登录</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.9删除管理员：http://139.196.50.25:8080/cloudisplay/service/admin/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm919">
+    管理员id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    <button onclick="tokenCall('frm919', 'admin/delete');return false">删除管理员</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.10角色查询：http://139.196.164.43:8083service/role/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9110">
+    当前页码(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    页面条数(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    检索条件，支持rolename、description(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    <button onclick="tokenCall('frm9110', 'role/list');return false">角色查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.11角色权限查询：http://139.196.164.43:8083service/role/allright</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9111">
+    角色id(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9111', 'role/allright');return false">角色权限查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.12我的权限：http://139.196.164.43:8083service/role/treeright</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9112">
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9112', 'role/treeright');return false">我的权限</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.13新增角色：http://139.196.164.43:8083service/role/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9113">
+    角色名称(rolename)<font color=red>*</font>：<input type="text" id="txtrolename" name="txtrolename" value=""/>
+    角色描述(description)<font color=red>*</font>：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    权限id的json串，一维数组，如[1,4,6,...](rightjson)：<input type="text" id="txtrightjson" name="txtrightjson" value=""/>
+    <button onclick="tokenCall('frm9113', 'role/new');return false">新增角色</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.14查看角色信息：http://139.196.164.43:8083service/role/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9114">
+    角色id(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    <button onclick="tokenCall('frm9114', 'role/detail');return false">查看角色信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.15角色信息修改：http://139.196.164.43:8083service/role/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9115">
+    角色id(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    角色名称(rolename)<font color=red>*</font>：<input type="text" id="txtrolename" name="txtrolename" value=""/>
+    角色描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    权限id的json串，一维数组，如[1,4,6,...](rightjson)：<input type="text" id="txtrightjson" name="txtrightjson" value=""/>
+    <button onclick="tokenCall('frm9115', 'role/update');return false">角色信息修改</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.16角色权限配置：http://139.196.164.43:8083service/role/updateright</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9116">
+    角色id(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    权限id的json串，一维数组，如[1,4,6,...](rightjson)<font color=red>*</font>：<input type="text" id="txtrightjson" name="txtrightjson" value=""/>
+    <button onclick="tokenCall('frm9116', 'role/updateright');return false">角色权限配置</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.17删除角色：http://139.196.164.43:8083service/role/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9117">
+    角色id(roleid)<font color=red>*</font>：<input type="text" id="txtroleid" name="txtroleid" value="1"/>
+    <button onclick="tokenCall('frm9117', 'role/delete');return false">删除角色</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.18所有权限查询：http://139.196.164.43:8083service/right/all</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9118">
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9118', 'right/all');return false">所有权限查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.19通知消息查询：http://139.196.50.25:8080/cloudisplay/service/notice/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9119">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    检索条件，支持content(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9119', 'notice/list');return false">通知消息查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.20查看通知消息：http://139.196.50.25:8080/cloudisplay/service/notice/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9120">
+    通知id(noticeid)<font color=red>*</font>：<input type="text" id="txtnoticeid" name="txtnoticeid" value=""/>
+    <button onclick="tokenCall('frm9120', 'notice/detail');return false">查看通知消息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.21新增通知消息：http://139.196.50.25:8080/cloudisplay/service/notice/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9121">
+    消息内容(content)<font color=red>*</font>：<input type="text" id="txtcontent" name="txtcontent" value=""/>
+    时长(duration)：<input type="text" id="txtduration" name="txtduration" value=""/>
+    <button onclick="tokenCall('frm9121', 'notice/new');return false">新增通知消息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.22修改通知消息：http://139.196.50.25:8080/cloudisplay/service/notice/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9122">
+    通知id(noticeid)<font color=red>*</font>：<input type="text" id="txtnoticeid" name="txtnoticeid" value=""/>
+    消息内容(content)<font color=red>*</font>：<input type="text" id="txtcontent" name="txtcontent" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    时长(duration)：<input type="text" id="txtduration" name="txtduration" value=""/>
+    <button onclick="tokenCall('frm9122', 'notice/update');return false">修改通知消息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.23删除通知消息：http://139.196.50.25:8080/cloudisplay/service/notice/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9123">
+    通知id(noticeid)<font color=red>*</font>：<input type="text" id="txtnoticeid" name="txtnoticeid" value=""/>
+    <button onclick="tokenCall('frm9123', 'notice/delete');return false">删除通知消息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.24插播消息：http://139.196.50.25:8080/cloudisplay/service/notice/intercut</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9124">
+    消息id(cid)<font color=red>*</font>：<input type="text" id="txtcid" name="txtcid" value=""/>
+    终端代码，json数组(devicecodejson)<font color=red>*</font>：<input type="text" id="txtdevicecodejson" name="txtdevicecodejson" value=""/>
+    <button onclick="tokenCall('frm9124', 'notice/intercut');return false">插播消息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.25软件版本查询：http://139.196.50.25:8080/cloudisplay/service/version/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9125">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    检索条件，支持versionname、versioncode、ostype、summary(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9125', 'version/list');return false">软件版本查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.26查看软件版本信息：http://139.196.50.25:8080/cloudisplay/service/version/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9126">
+    版本id(versionid)<font color=red>*</font>：<input type="text" id="txtversionid" name="txtversionid" value=""/>
+    <button onclick="tokenCall('frm9126', 'version/detail');return false">查看软件版本信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.27新增软件版本：http://139.196.50.25:8080/cloudisplay/service/version/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9127-data">
+    版本名称(versionname)<font color=red>*</font>：<input type="text" id="versionname" name="versionname" value=""/>
+    版本号(versioncode)<font color=red>*</font>：<input type="text" id="versioncode" name="versioncode" value=""/>
+    操作系统(ostype)<font color=red>*</font>：<input type="text" id="ostype" name="ostype" value=""/>
+    摘要(summary)<font color=red>*</font>：<input type="text" id="summary" name="summary" value=""/>
+    版本文件(attachmentfile)<font color=red>*</font>：<input type="file" id="attachmentfile" name="attachmentfile" value=""/>
+    描述(description)：<input type="text" id="description" name="description" value=""/>
+    <button onclick="tokenCall('frm9127-data', 'version/new');return false">新增软件版本</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.28修改软件版本信息：http://139.196.50.25:8080/cloudisplay/service/version/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9128">
+    版本id(versionid)<font color=red>*</font>：<input type="text" id="txtversionid" name="txtversionid" value=""/>
+    版本名称(versionname)：<input type="text" id="txtversionname" name="txtversionname" value=""/>
+    版本号(versioncode)：<input type="text" id="txtversioncode" name="txtversioncode" value=""/>
+    操作系统(ostype)：<input type="text" id="txtostype" name="txtostype" value=""/>
+    摘要(summary)：<input type="text" id="txtsummary" name="txtsummary" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    版本文件(attachmentfile)：<input type="text" id="txtattachmentfile" name="txtattachmentfile" value=""/>
+    当前用户id(updateuser)：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    <button onclick="tokenCall('frm9128', 'version/update');return false">修改软件版本信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.29删除软件版本：http://139.196.50.25:8080/cloudisplay/service/version/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9129">
+    版本id(versionid)<font color=red>*</font>：<input type="text" id="txtversionid" name="txtversionid" value=""/>
+    <button onclick="tokenCall('frm9129', 'version/delete');return false">删除软件版本</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.30版本升级：http://139.196.50.25:8080/cloudisplay/service/version/upgrade</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9130">
+    版本id(cid)<font color=red>*</font>：<input type="text" id="txtcid" name="txtcid" value=""/>
+    终端代码，json数组(devicecodejson)<font color=red>*</font>：<input type="text" id="txtdevicecodejson" name="txtdevicecodejson" value=""/>
+    <button onclick="tokenCall('frm9130', 'version/upgrade');return false">版本升级</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.31系统配置查询：http://139.196.50.25:8080/cloudisplay/service/config/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9131">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    检索条件，支持configname、configvalue(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9131', 'config/list');return false">系统配置查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.32查看系统配置信息：http://139.196.50.25:8080/cloudisplay/service/config/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9132">
+    参数id(configid)<font color=red>*</font>：<input type="text" id="txtconfigid" name="txtconfigid" value=""/>
+    <button onclick="tokenCall('frm9132', 'config/detail');return false">查看系统配置信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.33新增系统配置：http://139.196.50.25:8080/cloudisplay/service/config/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9133">
+    参数名称(configname)<font color=red>*</font>：<input type="text" id="txtconfigname" name="txtconfigname" value=""/>
+    参数值(confignvalue)<font color=red>*</font>：<input type="text" id="txtconfignvalue" name="txtconfignvalue" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9133', 'config/new');return false">新增系统配置</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.34修改系统配置：http://139.196.50.25:8080/cloudisplay/service/config/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9134">
+    参数id(configid)<font color=red>*</font>：<input type="text" id="txtconfigid" name="txtconfigid" value=""/>
+    参数值(confignvalue)<font color=red>*</font>：<input type="text" id="txtconfignvalue" name="txtconfignvalue" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9134', 'config/update');return false">修改系统配置</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.35删除系统配置：http://139.196.50.25:8080/cloudisplay/service/config/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9135">
+    参数id(configid)<font color=red>*</font>：<input type="text" id="txtconfigid" name="txtconfigid" value=""/>
+    <button onclick="tokenCall('frm9135', 'config/delete');return false">删除系统配置</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.36天气源查询：http://139.196.50.25:8080/cloudisplay/service/weather/all</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9136">
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9136', 'weather/all');return false">天气源查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.37查看天气源信息：http://139.196.50.25:8080/cloudisplay/service/weather/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9137">
+    天气id(weatherid)<font color=red>*</font>：<input type="text" id="txtweatherid" name="txtweatherid" value=""/>
+    <button onclick="tokenCall('frm9137', 'weather/detail');return false">查看天气源信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.1.38测试天气源：http://139.196.50.25:8080/cloudisplay/service/weather/test</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9138">
+    天气id(weatherid)<font color=red>*</font>：<input type="text" id="txtweatherid" name="txtweatherid" value=""/>
+    <button onclick="tokenCall('frm9138', 'weather/test');return false">测试天气源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.1查询用户列表：http://139.196.50.25:8080/cloudisplay/service/user/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm921">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    终端代码(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    检索条件，支持truename、email、address(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm921', 'user/list');return false">查询用户列表</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.2查看用户信息：http://139.196.50.25:8080/cloudisplay/service/user/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm922">
+    用户id(userid)：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    <button onclick="tokenCall('frm922', 'user/detail');return false">查看用户信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.3用户获取验证码：http://139.196.50.25:8080/cloudisplay/service/user/checkcode</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm923">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    <button onclick="doCall('frm923', 'user/checkcode');return false">用户获取验证码</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.4新建用户：http://139.196.50.25:8080/cloudisplay/service/user/register</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm924">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    昵称(nickname)：<input type="text" id="txtnickname" name="txtnickname" value="yxw"/>
+    真实姓名(truename)：<input type="text" id="txttruename" name="txttruename" value=""/>
+    邮箱(email)：<input type="text" id="txtemail" name="txtemail" value=""/>
+    地址(address)：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    <button onclick="tokenCall('frm924', 'user/register');return false">新建用户</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.5修改用户信息：http://139.196.50.25:8080/cloudisplay/service/user/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm925">
+    昵称(nickname)：<input type="text" id="txtnickname" name="txtnickname" value="yxw"/>
+    真实姓名(truename)：<input type="text" id="txttruename" name="txttruename" value=""/>
+    邮箱(email)：<input type="text" id="txtemail" name="txtemail" value=""/>
+    地址(address)：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    <button onclick="tokenCall('frm925', 'user/update');return false">修改用户信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.6设置用户头像：http://139.196.50.25:8080/cloudisplay/service/user/headpic</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm926">
+    头像（文件）(headpicfile)<font color=red>*</font>：<input type="text" id="txtheadpicfile" name="txtheadpicfile" value=""/>
+    <button onclick="tokenCall('frm926', 'user/headpic');return false">设置用户头像</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.7修改密码：http://139.196.50.25:8080/cloudisplay/service/user/updatepassword</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm927">
+    旧密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    新密码(newpass)<font color=red>*</font>：<input type="text" id="txtnewpass" name="txtnewpass" value="123456"/>
+    <button onclick="tokenCall('frm927', 'user/updatepassword');return false">修改密码</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.8密码找回：http://139.196.50.25:8080/cloudisplay/service/user/findpassword</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm928">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    短信校验码(checkcode)<font color=red>*</font>：<input type="text" id="txtcheckcode" name="txtcheckcode" value=""/>
+    新的密码(newpass)<font color=red>*</font>：<input type="text" id="txtnewpass" name="txtnewpass" value="123456"/>
+    <button onclick="tokenCall('frm928', 'user/findpassword');return false">密码找回</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.9重置用户密码：http://139.196.50.25:8080/cloudisplay/service/user/resetpassword</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm929">
+    <label><font color="red">仅管理员能重置用户密码</font></label><br>
+    用户id(userid)<font color=red>*</font>：<input type="text" id="txtuserid" name="txtuserid" value="1000"/>
+    <button onclick="tokenCall('frm929', 'user/resetpassword');return false">重置用户密码</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.10用户登录：http://139.196.50.25:8080/cloudisplay/service/user/login</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9210">
+    手机号码或昵称(nickname)<font color=red>*</font>：<input type="text" id="txtnickname" name="txtnickname" value="yxw"/>
+    密码(password)<font color=red>*</font>：<input type="text" id="txtpassword" name="txtpassword" value="123456"/>
+    <button onclick="doCall('frm9210', 'user/login');return false">用户登录</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.11用户退出登录：http://139.196.50.25:8080/cloudisplay/service/user/logout</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9211">
+    <button onclick="tokenCall('frm9211', 'user/logout');return false">用户退出登录</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.2.12删除用户：http://139.196.50.25:8080/cloudisplay/service/user/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9212">
+    <label><font color="red">仅管理员能删除用户</font></label><br>
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    <button onclick="tokenCall('frm9212', 'user/delete');return false">删除用户</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.1新增城市：http://139.196.50.25:8080/cloudisplay/service/city/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm931">
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    城市名称(cityname)<font color=red>*</font>：<input type="text" id="txtcityname" name="txtcityname" value=""/>
+    天气id(weatherid)<font color=red>*</font>：<input type="text" id="txtweatherid" name="txtweatherid" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm931', 'city/new');return false">新增城市</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.2城市查询：http://139.196.50.25:8080/cloudisplay/service/city/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm932">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    检索条件，支持cityname(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm932', 'city/list');return false">城市查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.3查看城市信息：http://139.196.50.25:8080/cloudisplay/service/city/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm933">
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    <button onclick="tokenCall('frm933', 'city/detail');return false">查看城市信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.4修改城市信息：http://139.196.50.25:8080/cloudisplay/service/city/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm934">
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    城市名称(cityname)<font color=red>*</font>：<input type="text" id="txtcityname" name="txtcityname" value=""/>
+    天气id(weatherid)<font color=red>*</font>：<input type="text" id="txtweatherid" name="txtweatherid" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm934', 'city/update');return false">修改城市信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.5删除城市：http://139.196.50.25:8080/cloudisplay/service/city/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm935">
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    <button onclick="tokenCall('frm935', 'city/delete');return false">删除城市</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.6新增分区：http://139.196.50.25:8080/cloudisplay/service/area/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm936">
+    区域名称(areaname)<font color=red>*</font>：<input type="text" id="txtareaname" name="txtareaname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm936', 'area/new');return false">新增分区</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.7分区查询：http://139.196.50.25:8080/cloudisplay/service/area/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm937">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    分区id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    检索条件，支持areaname(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm937', 'area/list');return false">分区查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.8查看分区信息：http://139.196.50.25:8080/cloudisplay/service/area/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm938">
+    分区id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    <button onclick="tokenCall('frm938', 'area/detail');return false">查看分区信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.9修改分区信息：http://139.196.50.25:8080/cloudisplay/service/area/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm939">
+    分区ID(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    分区名称(areaname)<font color=red>*</font>：<input type="text" id="txtareaname" name="txtareaname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm939', 'area/update');return false">修改分区信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.10删除分区：http://139.196.50.25:8080/cloudisplay/service/area/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9310">
+    分区id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    <button onclick="tokenCall('frm9310', 'area/delete');return false">删除分区</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.11新增大楼：http://139.196.50.25:8080/cloudisplay/service/build/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9311">
+    大楼名称(buildname)<font color=red>*</font>：<input type="text" id="txtbuildname" name="txtbuildname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    层高(floorcount)<font color=red>*</font>：<input type="text" id="txtfloorcount" name="txtfloorcount" value=""/>
+    楼高(buildheight)<font color=red>*</font>：<input type="text" id="txtbuildheight" name="txtbuildheight" value=""/>
+    大楼地址(address)<font color=red>*</font>：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9311', 'build/new');return false">新增大楼</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.12大楼查询：http://139.196.50.25:8080/cloudisplay/service/build/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9312">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    大楼id(buildid)：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    检索条件，支持buildname、address(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9312', 'build/list');return false">大楼查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.13查看大楼信息：http://139.196.50.25:8080/cloudisplay/service/build/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9313">
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    <button onclick="tokenCall('frm9313', 'build/detail');return false">查看大楼信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.14修改大楼信息：http://139.196.50.25:8080/cloudisplay/service/build/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9314">
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    大楼名称(buildname)<font color=red>*</font>：<input type="text" id="txtbuildname" name="txtbuildname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    层高(floorcount)<font color=red>*</font>：<input type="text" id="txtfloorcount" name="txtfloorcount" value=""/>
+    楼高(buildheight)<font color=red>*</font>：<input type="text" id="txtbuildheight" name="txtbuildheight" value=""/>
+    大楼地址(address)<font color=red>*</font>：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9314', 'build/update');return false">修改大楼信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.15删除大楼：http://139.196.50.25:8080/cloudisplay/service/build/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9315">
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    <button onclick="tokenCall('frm9315', 'build/delete');return false">删除大楼</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.16新增电梯：http://139.196.50.25:8080/cloudisplay/service/lift/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9316">
+    电梯名称(liftname)<font color=red>*</font>：<input type="text" id="txtliftname" name="txtliftname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    纬度(lat)<font color=red>*</font>：<input type="text" id="txtlat" name="txtlat" value=""/>
+    经度(lng)<font color=red>*</font>：<input type="text" id="txtlng" name="txtlng" value=""/>
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    楼层json串，二维数组，如：[[1,"B1","12","10.2","负一楼"],[2,"1","16","9.1","1楼"]](floorjson)<font color=red>*</font>：<input type="text" id="txtfloorjson" name="txtfloorjson" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9316', 'lift/new');return false">新增电梯</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.17电梯查询：http://139.196.50.25:8080/cloudisplay/service/lift/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9317">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    电梯id列表，比如1,2,3，逗号分隔(liftids)：<input type="text" id="txtliftids" name="txtliftids" value=""/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    纬度(lat)：<input type="text" id="txtlat" name="txtlat" value=""/>
+    经度(lng)：<input type="text" id="txtlng" name="txtlng" value=""/>
+    设备代码(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    状态0离线1在线2维修(status)：<input type="text" id="txtstatus" name="txtstatus" value=""/>
+    手机号码，使用此条件来标识是否电梯已经被收藏(mobileno)：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    检索条件，支持liftname、devicecode(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9317', 'lift/list');return false">电梯查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.18查看电梯信息：http://139.196.50.25:8080/cloudisplay/service/lift/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9318">
+    电梯id，和devicecode二选一(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    设备代码，和liftid二选一(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm9318', 'lift/detail');return false">查看电梯信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.19修改电梯信息：http://139.196.50.25:8080/cloudisplay/service/lift/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9319">
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    电梯名称(liftname)<font color=red>*</font>：<input type="text" id="txtliftname" name="txtliftname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    纬度(lat)<font color=red>*</font>：<input type="text" id="txtlat" name="txtlat" value=""/>
+    经度(lng)<font color=red>*</font>：<input type="text" id="txtlng" name="txtlng" value=""/>
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    楼层json串，二维数组，如：[[1,"B1","12","16.4"],[2,"1","16","9.1"],...](floorjson)<font color=red>*</font>：<input type="text" id="txtfloorjson" name="txtfloorjson" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9319', 'lift/update');return false">修改电梯信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.20删除电梯：http://139.196.50.25:8080/cloudisplay/service/lift/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9320">
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    <button onclick="tokenCall('frm9320', 'lift/delete');return false">删除电梯</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.21电梯楼层查询：http://139.196.50.25:8080/cloudisplay/service/lift/floorlist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9321">
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    <button onclick="tokenCall('frm9321', 'lift/floorlist');return false">电梯楼层查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.22查看我的收藏：http://139.196.50.25:8080/cloudisplay/service/lift/favoritelist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9322">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9322', 'lift/favoritelist');return false">查看我的收藏</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.23加入我的收藏：http://139.196.50.25:8080/cloudisplay/service/lift/addfavorite</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9323">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    <button onclick="tokenCall('frm9323', 'lift/addfavorite');return false">加入我的收藏</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.24删除我的收藏：http://139.196.50.25:8080/cloudisplay/service/lift/deletefavorite</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9324">
+    手机号码(mobileno)<font color=red>*</font>：<input type="text" id="txtmobileno" name="txtmobileno" value="18901585270"/>
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    <button onclick="tokenCall('frm9324', 'lift/deletefavorite');return false">删除我的收藏</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.25新增企业：http://139.196.50.25:8080/cloudisplay/service/company/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9325">
+    公司名称(companyname)<font color=red>*</font>：<input type="text" id="txtcompanyname" name="txtcompanyname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    楼层(floor)<font color=red>*</font>：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    地址(address)<font color=red>*</font>：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    公司名首字母(initial)：<input type="text" id="txtinitial" name="txtinitial" value=""/>
+    公司名称拼音(pinyin)：<input type="text" id="txtpinyin" name="txtpinyin" value=""/>
+    联系人(linkman)：<input type="text" id="txtlinkman" name="txtlinkman" value=""/>
+    联系电话(phone)：<input type="text" id="txtphone" name="txtphone" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9325', 'company/new');return false">新增企业</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.26企业查询：http://139.196.50.25:8080/cloudisplay/service/company/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9326">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    企业id(companyid)：<input type="text" id="txtcompanyid" name="txtcompanyid" value=""/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id(liftid)：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    楼层(floor)：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    首字母(initial)：<input type="text" id="txtinitial" name="txtinitial" value=""/>
+    检索条件，支持companyname、pinyin、address、linkman、phone(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9326', 'company/list');return false">企业查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.27查看企业信息：http://139.196.50.25:8080/cloudisplay/service/company/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9327">
+    企业id(companyid)<font color=red>*</font>：<input type="text" id="txtcompanyid" name="txtcompanyid" value=""/>
+    <button onclick="tokenCall('frm9327', 'company/detail');return false">查看企业信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.28修改企业信息：http://139.196.50.25:8080/cloudisplay/service/company/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9328">
+    公司id(companyid)<font color=red>*</font>：<input type="text" id="txtcompanyid" name="txtcompanyid" value=""/>
+    公司名称(companyname)<font color=red>*</font>：<input type="text" id="txtcompanyname" name="txtcompanyname" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    楼层(floor)<font color=red>*</font>：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    地址(address)<font color=red>*</font>：<input type="text" id="txtaddress" name="txtaddress" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    公司名首字母(initial)：<input type="text" id="txtinitial" name="txtinitial" value=""/>
+    公司名称拼音(pinyin)：<input type="text" id="txtpinyin" name="txtpinyin" value=""/>
+    联系人(linkman)：<input type="text" id="txtlinkman" name="txtlinkman" value=""/>
+    联系电话(phone)：<input type="text" id="txtphone" name="txtphone" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9328', 'company/update');return false">修改企业信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.3.29删除企业：http://139.196.50.25:8080/cloudisplay/service/company/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9329">
+    企业id(companyid)<font color=red>*</font>：<input type="text" id="txtcompanyid" name="txtcompanyid" value=""/>
+    <button onclick="tokenCall('frm9329', 'company/delete');return false">删除企业</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.1终端查询：http://139.196.50.25:8080/cloudisplay/service/device/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm941">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id，如果为-1，查未绑定的终端(liftid)：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    状态，0离线1在线2维修(status)：<input type="text" id="txtstatus" name="txtstatus" value=""/>
+    检索条件，支持devicename、location(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序条件(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm941', 'device/list');return false">终端查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.2新增终端：http://139.196.50.25:8080/cloudisplay/service/device/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm942">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    终端名称(devicename)<font color=red>*</font>：<input type="text" id="txtdevicename" name="txtdevicename" value=""/>
+    终端类型1:10.4吋(默认),2:Touch C,3:Touch B(devicetype)<font color=red>*</font>：<input type="text" id="txtdevicetype" name="txtdevicetype" value=""/>
+    分辨率宽(width)<font color=red>*</font>：<input type="text" id="txtwidth" name="txtwidth" value=""/>
+    分辨率高(height)<font color=red>*</font>：<input type="text" id="txtheight" name="txtheight" value=""/>
+    终端位置(location)<font color=red>*</font>：<input type="text" id="txtlocation" name="txtlocation" value=""/>
+    软件版本(versioncode)<font color=red>*</font>：<input type="text" id="txtversioncode" name="txtversioncode" value=""/>
+    系统类型linux(1)andriod(2)(ostype)<font color=red>*</font>：<input type="text" id="txtostype" name="txtostype" value=""/>
+    城市代码(citycode)：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id(liftid)：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm942', 'device/new');return false">新增终端</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.3查看终端信息：http://139.196.50.25:8080/cloudisplay/service/device/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm943">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm943', 'device/detail');return false">查看终端信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.4修改终端信息：http://139.196.50.25:8080/cloudisplay/service/device/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm944">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    城市代码(citycode)<font color=red>*</font>：<input type="text" id="txtcitycode" name="txtcitycode" value=""/>
+    区域id(areaid)<font color=red>*</font>：<input type="text" id="txtareaid" name="txtareaid" value=""/>
+    大楼id(buildid)<font color=red>*</font>：<input type="text" id="txtbuildid" name="txtbuildid" value=""/>
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    终端名称(devicename)<font color=red>*</font>：<input type="text" id="txtdevicename" name="txtdevicename" value=""/>
+    终端类型(devicetype)<font color=red>*</font>：<input type="text" id="txtdevicetype" name="txtdevicetype" value=""/>
+    分辨率（建议给用户选择，而不是直接输入）(dpi)<font color=red>*</font>：<input type="text" id="txtdpi" name="txtdpi" value=""/>
+    终端位置(location)<font color=red>*</font>：<input type="text" id="txtlocation" name="txtlocation" value=""/>
+    软件版本(versioncode)<font color=red>*</font>：<input type="text" id="txtversioncode" name="txtversioncode" value=""/>
+    系统类型(ostype)<font color=red>*</font>：<input type="text" id="txtostype" name="txtostype" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm944', 'device/update');return false">修改终端信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.5删除终端：http://139.196.50.25:8080/cloudisplay/service/device/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm945">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm945', 'device/delete');return false">删除终端</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.6重启终端：http://139.196.50.25:8080/cloudisplay/service/device/reset</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm946">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm946', 'device/reset');return false">重启终端</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.7终端音量查询：http://139.196.50.25:8080/cloudisplay/service/device/volumn</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm947">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm947', 'device/volumn');return false">终端音量查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.8设置终端音量：http://139.196.50.25:8080/cloudisplay/service/device/updatevolume</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm948">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    音量(volumn)<font color=red>*</font>：<input type="text" id="txtvolumn" name="txtvolumn" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    <button onclick="tokenCall('frm948', 'device/updatevolume');return false">设置终端音量</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.9终端屏保查询：http://139.196.50.25:8080/cloudisplay/service/device/screen</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm949">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm949', 'device/screen');return false">终端屏保查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.10设置终端屏保：http://139.196.50.25:8080/cloudisplay/service/device/updatescreen</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9410">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    是否有屏保0无1有(screen)<font color=red>*</font>：<input type="text" id="txtscreen" name="txtscreen" value=""/>
+    开关0关1开(onoff)<font color=red>*</font>：<input type="text" id="txtonoff" name="txtonoff" value=""/>
+    亮度1-255(bright)<font color=red>*</font>：<input type="text" id="txtbright" name="txtbright" value=""/>
+    时长0(15M),1(30M),2(60M)(duration)<font color=red>*</font>：<input type="text" id="txtduration" name="txtduration" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    <button onclick="tokenCall('frm9410', 'device/updatescreen');return false">设置终端屏保</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.11终端截屏：http://139.196.50.25:8080/cloudisplay/service/device/capture</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9411">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm9411', 'device/capture');return false">终端截屏</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.12查看终端剩余空间：http://139.196.50.25:8080/cloudisplay/service/device/freespace</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9412">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm9412', 'device/freespace');return false">查看终端剩余空间</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.13增加终端资源：http://139.196.50.25:8080/cloudisplay/service/device/addresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9413">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    模板窗口id(itemid)<font color=red>*</font>：<input type="text" id="txtitemid" name="txtitemid" value=""/>
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    方向1从上到下2从下到上3从左到右4从右到左(textdirect)：<input type="text" id="txttextdirect" name="txttextdirect" value=""/>
+    速度(textspeed)：<input type="text" id="txttextspeed" name="txttextspeed" value=""/>
+    文本大小(size)：<input type="text" id="txtsize" name="txtsize" value=""/>
+    时长(showtime)：<input type="text" id="txtshowtime" name="txtshowtime" value=""/>
+    展示类型1普通展示2楼层展示(showtype)：<input type="text" id="txtshowtype" name="txtshowtype" value=""/>
+    动画类型1淡入淡出2缩放3旋转4平移(animationtype)：<input type="text" id="txtanimationtype" name="txtanimationtype" value=""/>
+    实际楼层，从1开始(floor)：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    <button onclick="tokenCall('frm9413', 'device/addresource');return false">增加终端资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.14终端资源查询：http://139.196.50.25:8080/cloudisplay/service/device/resourcelist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9414">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    模板窗口id，缺失则查询所有模板窗口的资源(itemid)：<input type="text" id="txtitemid" name="txtitemid" value=""/>
+    <button onclick="tokenCall('frm9414', 'device/resourcelist');return false">终端资源查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.15修改终端资源：http://139.196.50.25:8080/cloudisplay/service/device/updateresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9415">
+    终端资源id(id)<font color=red>*</font>：<input type="text" id="txtid" name="txtid" value=""/>
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    方向1从上到下2从下到上3从左到右4从右到左(textdirect)：<input type="text" id="txttextdirect" name="txttextdirect" value=""/>
+    速度(textspeed)：<input type="text" id="txttextspeed" name="txttextspeed" value=""/>
+    时长(showtime)：<input type="text" id="txtshowtime" name="txtshowtime" value=""/>
+    展示类型1普通展示2楼层展示(showtype)：<input type="text" id="txtshowtype" name="txtshowtype" value=""/>
+    动画类型1淡入淡出2缩放3旋转4平移(animationtype)：<input type="text" id="txtanimationtype" name="txtanimationtype" value=""/>
+    实际楼层，从1开始(floor)：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    <button onclick="tokenCall('frm9415', 'device/updateresource');return false">修改终端资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.16删除终端资源：http://139.196.50.25:8080/cloudisplay/service/device/updateresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9416">
+    终端资源id(id)<font color=red>*</font>：<input type="text" id="txtid" name="txtid" value=""/>
+    <button onclick="tokenCall('frm9416', 'device/updateresource');return false">删除终端资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.17终端资源更新：http://139.196.50.25:8080/cloudisplay/service/device/pushresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9417">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    模板窗口id(cid)<font color=red>*</font>：<input type="text" id="txtcid" name="txtcid" value=""/>
+    <button onclick="tokenCall('frm9417', 'device/pushresource');return false">终端资源更新</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.4.18终端任务状态查询：http://139.196.50.25:8080/cloudisplay/service/device/tasklist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9418">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    终端代码(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    通讯类型(msgtype)：<input type="text" id="txtmsgtype" name="txtmsgtype" value=""/>
+    <button onclick="tokenCall('frm9418', 'device/tasklist');return false">终端任务状态查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.1新增模板：http://139.196.50.25:8080/cloudisplay/service/frame/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm951-data">
+    模板名称(framename)<font color=red>*</font>：<input type="text" id="framename" name="framename" value=""/>
+    模板大小(size)<font color=red>*</font>：<input type="text" id="size" name="size" value=""/>
+    模板文件(attachmentfile)<font color=red>*</font>：<input type="file" id="attachmentfile" name="attachmentfile" value=""/>
+    描述(description)：<input type="text" id="description" name="description" value=""/>
+    <button onclick="tokenCall('frm951-data', 'frame/new');return false">新增模板</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.2模板查询：http://139.196.50.25:8080/cloudisplay/service/frame/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm952">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    检索字段，支持framename(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序字段(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm952', 'frame/list');return false">模板查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.3查看模板信息：http://139.196.50.25:8080/cloudisplay/service/frame/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm953">
+    模板id(frameid)<font color=red>*</font>：<input type="text" id="txtframeid" name="txtframeid" value=""/>
+    <button onclick="tokenCall('frm953', 'frame/detail');return false">查看模板信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.4修改模板信息：http://139.196.50.25:8080/cloudisplay/service/frame/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm954-data">
+    模板id(frameid)<font color=red>*</font>：<input type="text" id="frameid" name="frameid" value=""/>
+    模板名称(framename)<font color=red>*</font>：<input type="text" id="framename" name="framename" value=""/>
+    模板大小(size)<font color=red>*</font>：<input type="text" id="size" name="size" value=""/>
+    模板文件(attachmentfile)<font color=red>*</font>：<input type="file" id="attachmentfile" name="attachmentfile" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="updateuser" name="updateuser" value=""/>
+    描述(description)：<input type="text" id="description" name="description" value=""/>
+    <button onclick="tokenCall('frm954-data', 'frame/update');return false">修改模板信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.5删除模板：http://139.196.50.25:8080/cloudisplay/service/frame/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm955">
+    模板id(frameid)<font color=red>*</font>：<input type="text" id="txtframeid" name="txtframeid" value=""/>
+    <button onclick="tokenCall('frm955', 'frame/delete');return false">删除模板</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.6模板窗口查询：http://139.196.50.25:8080/cloudisplay/service/frame/itemlist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm956">
+    模板id(frameid)：<input type="text" id="txtframeid" name="txtframeid" value=""/>
+    终端代码(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    节目id(programid)：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    以上三个参数任选一个，不能同时设置(注意)：<input type="text" id="txt注意" name="txt注意" value=""/>
+    <button onclick="tokenCall('frm956', 'frame/itemlist');return false">模板窗口查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.7新增资源：http://139.196.50.25:8080/cloudisplay/service/resource/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm957-data">
+    资源名称(resourcename)<font color=red>*</font>：<input type="text" id="resourcename" name="resourcename" value=""/>
+    资源类型(resourcetype)<font color=red>*</font>：<input type="text" id="resourcetype" name="resourcetype" value=""/>
+    资源内容或者站点xpath路径(content)<font color=red>*</font>：<input type="text" id="content" name="content" value=""/>
+    资源大小(size)<font color=red>*</font>：<input type="text" id="size" name="size" value=""/>
+    资源文件(file)<font color=red>*</font>：<input type="file" id="file" name="file" value=""/>
+    描述(description)：<input type="text" id="description" name="description" value=""/>
+    <button onclick="tokenCall('frm957-data', 'resource/new');return false">新增资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.8资源查询：http://139.196.50.25:8080/cloudisplay/service/resource/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm958">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    模板窗口类型，此时仅查询适应模板窗口的资源(itemtype)：<input type="text" id="txtitemtype" name="txtitemtype" value=""/>
+    过滤此节目已经选择的资源(programid)：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    过滤此设备已经选择的资源(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    检索字段，支持resourcename、resourcetype(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序字段(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm958', 'resource/list');return false">资源查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.9查看资源信息：http://139.196.50.25:8080/cloudisplay/service/resource/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm959">
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    <button onclick="tokenCall('frm959', 'resource/detail');return false">查看资源信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.10修改资源信息：http://139.196.50.25:8080/cloudisplay/service/resource/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9510-data">
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="resourceid" name="resourceid" value=""/>
+    资源名称(resourcename)<font color=red>*</font>：<input type="text" id="resourcename" name="resourcename" value=""/>
+    资源类型(resourcetype)<font color=red>*</font>：<input type="text" id="resourcetype" name="resourcetype" value=""/>
+    资源内容或者站点xpath路径(content)<font color=red>*</font>：<input type="text" id="content" name="content" value=""/>
+    资源大小(size)<font color=red>*</font>：<input type="text" id="size" name="size" value=""/>
+    资源文件(file)<font color=red>*</font>：<input type="file" id="file" name="file" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="updateuser" name="updateuser" value=""/>
+    描述(description)：<input type="text" id="description" name="description" value=""/>
+    <button onclick="tokenCall('frm9510-data', 'resource/update');return false">修改资源信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.11删除资源：http://139.196.50.25:8080/cloudisplay/service/resource/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9511">
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    <button onclick="tokenCall('frm9511', 'resource/delete');return false">删除资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.12新增节目：http://139.196.50.25:8080/cloudisplay/service/program/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9512">
+    节目名称(programname)<font color=red>*</font>：<input type="text" id="txtprogramname" name="txtprogramname" value=""/>
+    模板id(frameid)<font color=red>*</font>：<input type="text" id="txtframeid" name="txtframeid" value=""/>
+    动画(animation)<font color=red>*</font>：<input type="text" id="txtanimation" name="txtanimation" value=""/>
+    箭头(arrow)<font color=red>*</font>：<input type="text" id="txtarrow" name="txtarrow" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9512', 'program/new');return false">新增节目</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.13节目查询：http://139.196.50.25:8080/cloudisplay/service/program/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9513">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    终端代码(devicecode)：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    检索字段，支持programname(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序字段(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9513', 'program/list');return false">节目查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.14查看节目信息：http://139.196.50.25:8080/cloudisplay/service/program/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9514">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    <button onclick="tokenCall('frm9514', 'program/detail');return false">查看节目信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.15修改节目信息：http://139.196.50.25:8080/cloudisplay/service/program/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9515">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    节目名称(programname)<font color=red>*</font>：<input type="text" id="txtprogramname" name="txtprogramname" value=""/>
+    模板id(frameid)<font color=red>*</font>：<input type="text" id="txtframeid" name="txtframeid" value=""/>
+    动画(animation)<font color=red>*</font>：<input type="text" id="txtanimation" name="txtanimation" value=""/>
+    箭头(arrow)<font color=red>*</font>：<input type="text" id="txtarrow" name="txtarrow" value=""/>
+    当前用户id(updateuser)<font color=red>*</font>：<input type="text" id="txtupdateuser" name="txtupdateuser" value=""/>
+    描述(description)：<input type="text" id="txtdescription" name="txtdescription" value=""/>
+    <button onclick="tokenCall('frm9515', 'program/update');return false">修改节目信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.16删除节目：http://139.196.50.25:8080/cloudisplay/service/program/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9516">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    <button onclick="tokenCall('frm9516', 'program/delete');return false">删除节目</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.17新增节目资源：http://139.196.50.25:8080/cloudisplay/service/program/addresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9517">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    模板窗口id(itemid)<font color=red>*</font>：<input type="text" id="txtitemid" name="txtitemid" value=""/>
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    方向1从上到下2从下到上3从左到右4从右到左(textdirect)：<input type="text" id="txttextdirect" name="txttextdirect" value=""/>
+    速度(textspeed)：<input type="text" id="txttextspeed" name="txttextspeed" value=""/>
+    文本大小(size)：<input type="text" id="txtsize" name="txtsize" value=""/>
+    时长(showtime)：<input type="text" id="txtshowtime" name="txtshowtime" value=""/>
+    展示类型1普通展示2楼层展示(showtype)：<input type="text" id="txtshowtype" name="txtshowtype" value=""/>
+    动画类型1淡入淡出2缩放3旋转4平移(animationtype)：<input type="text" id="txtanimationtype" name="txtanimationtype" value=""/>
+    实际楼层，从1开始(floor)：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    这个接口会更新节目表的ready状态(注)：<input type="text" id="txt注" name="txt注" value=""/>
+    <button onclick="tokenCall('frm9517', 'program/addresource');return false">新增节目资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.18节目资源查询：http://139.196.50.25:8080/cloudisplay/service/program/resourcelist</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9518">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    模板窗口id，缺失则查询所有模板窗口的资源(itemid)：<input type="text" id="txtitemid" name="txtitemid" value=""/>
+    <button onclick="tokenCall('frm9518', 'program/resourcelist');return false">节目资源查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.19修改节目资源：http://139.196.50.25:8080/cloudisplay/service/program/updateresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9519">
+    节目资源id(id)<font color=red>*</font>：<input type="text" id="txtid" name="txtid" value=""/>
+    资源id(resourceid)<font color=red>*</font>：<input type="text" id="txtresourceid" name="txtresourceid" value=""/>
+    方向1从上到下2从下到上3从左到右4从右到左(textdirect)：<input type="text" id="txttextdirect" name="txttextdirect" value=""/>
+    速度(textspeed)：<input type="text" id="txttextspeed" name="txttextspeed" value=""/>
+    时长(showtime)：<input type="text" id="txtshowtime" name="txtshowtime" value=""/>
+    展示类型1普通展示2楼层展示(showtype)：<input type="text" id="txtshowtype" name="txtshowtype" value=""/>
+    动画类型1淡入淡出2缩放3旋转4平移(animationtype)：<input type="text" id="txtanimationtype" name="txtanimationtype" value=""/>
+    实际楼层，从1开始(floor)：<input type="text" id="txtfloor" name="txtfloor" value=""/>
+    <button onclick="tokenCall('frm9519', 'program/updateresource');return false">修改节目资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.20删除节目资源：http://139.196.50.25:8080/cloudisplay/service/program/deleteresource</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9520">
+    节目资源id(id)<font color=red>*</font>：<input type="text" id="txtid" name="txtid" value=""/>
+    这个接口会更新节目表的ready状态(注)：<input type="text" id="txt注" name="txt注" value=""/>
+    <button onclick="tokenCall('frm9520', 'program/deleteresource');return false">删除节目资源</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.21节目发布：http://139.196.50.25:8080/cloudisplay/service/program/push</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9521">
+    节目id(cid)<font color=red>*</font>：<input type="text" id="txtcid" name="txtcid" value=""/>
+    终端代码，json数组(devicecodejson)<font color=red>*</font>：<input type="text" id="txtdevicecodejson" name="txtdevicecodejson" value=""/>
+    发布时间(pushtime)：<input type="text" id="txtpushtime" name="txtpushtime" value=""/>
+    <button onclick="tokenCall('frm9521', 'program/push');return false">节目发布</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.22节目预览：http://139.196.50.25:8080/cloudisplay/service/program/preview</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9522">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    <button onclick="tokenCall('frm9522', 'program/preview');return false">节目预览</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.5.23节目下载：http://139.196.50.25:8080/cloudisplay/service/program/download</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9523">
+    节目id(programid)<font color=red>*</font>：<input type="text" id="txtprogramid" name="txtprogramid" value=""/>
+    <button onclick="tokenCall('frm9523', 'program/download');return false">节目下载</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.1终端维修上报：http://139.196.50.25:8080/cloudisplay/service/order/newmajor</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm961-data">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="devicecode" name="devicecode" value=""/>
+    用户手机号(mobileno)<font color=red>*</font>：<input type="text" id="mobileno" name="mobileno" value="18901585270"/>
+    故障原因(fault)<font color=red>*</font>：<input type="text" id="fault" name="fault" value=""/>
+    故障图片（文件）(attachfile)<font color=red>*</font>：<input type="file" id="attachfile" name="attachfile" value=""/>
+    <button onclick="tokenCall('frm961-data', 'order/newmajor');return false">终端维修上报</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.2终端发起对话：http://139.196.50.25:8080/cloudisplay/service/device/begintalk</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm962">
+    维保人员id(propuser)<font color=red>*</font>：<input type="text" id="txtpropuser" name="txtpropuser" value=""/>
+    <button onclick="tokenCall('frm962', 'device/begintalk');return false">终端发起对话</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.3手机上报GPS：http://139.196.50.25:8080/cloudisplay/service/user/lci</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm963">
+    经度(lng)<font color=red>*</font>：<input type="text" id="txtlng" name="txtlng" value=""/>
+    纬度(lat)<font color=red>*</font>：<input type="text" id="txtlat" name="txtlat" value=""/>
+    <button onclick="tokenCall('frm963', 'user/lci');return false">手机上报GPS</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.4手机接单：http://139.196.50.25:8080/cloudisplay/service/order/take</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm964">
+    订单号(orderid)<font color=red>*</font>：<input type="text" id="txtorderid" name="txtorderid" value=""/>
+    <button onclick="tokenCall('frm964', 'order/take');return false">手机接单</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.5手机反馈进度：http://139.196.50.25:8080/cloudisplay/service/order/reach</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm965">
+    订单号(orderid)<font color=red>*</font>：<input type="text" id="txtorderid" name="txtorderid" value=""/>
+    <button onclick="tokenCall('frm965', 'order/reach');return false">手机反馈进度</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.6手机关单：http://139.196.50.25:8080/cloudisplay/service/order/close</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm966">
+    订单号(orderid)<font color=red>*</font>：<input type="text" id="txtorderid" name="txtorderid" value=""/>
+    <button onclick="tokenCall('frm966', 'order/close');return false">手机关单</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.7手机发起对话：http://139.196.50.25:8080/cloudisplay/service/user/begintalk</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm967">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="txtdevicecode" name="txtdevicecode" value=""/>
+    <button onclick="tokenCall('frm967', 'user/begintalk');return false">手机发起对话</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.8结束对话：http://139.196.50.25:8080/cloudisplay/service/talk/close</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm968">
+    通话id(talkid)<font color=red>*</font>：<input type="text" id="txttalkid" name="txttalkid" value=""/>
+    <button onclick="tokenCall('frm968', 'talk/close');return false">结束对话</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.9后台物业查询：http://139.196.50.25:8080/cloudisplay/service/estate/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm969">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    检索字段，支持estname，linktel(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序字段(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm969', 'estate/list');return false">后台物业查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.10后台新增物业：http://139.196.50.25:8080/cloudisplay/service/estate/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9610">
+    物业名称(estname)<font color=red>*</font>：<input type="text" id="txtestname" name="txtestname" value=""/>
+    联系电话(linktel)<font color=red>*</font>：<input type="text" id="txtlinktel" name="txtlinktel" value=""/>
+    <button onclick="tokenCall('frm9610', 'estate/new');return false">后台新增物业</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.11后台修改物业：http://139.196.50.25:8080/cloudisplay/service/estate/update</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9611">
+    物业id(estid)<font color=red>*</font>：<input type="text" id="txtestid" name="txtestid" value=""/>
+    物业名称(estname)<font color=red>*</font>：<input type="text" id="txtestname" name="txtestname" value=""/>
+    联系电话(linktel)<font color=red>*</font>：<input type="text" id="txtlinktel" name="txtlinktel" value=""/>
+    <button onclick="tokenCall('frm9611', 'estate/update');return false">后台修改物业</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.12后台物业删除：http://139.196.50.25:8080/cloudisplay/service/estate/delete</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9612">
+    物业id(estid)<font color=red>*</font>：<input type="text" id="txtestid" name="txtestid" value=""/>
+    <button onclick="tokenCall('frm9612', 'estate/delete');return false">后台物业删除</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.13后台电梯绑定维保人员：http://139.196.50.25:8080/cloudisplay/service/lift/binduser</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9613">
+    电梯id(liftid)<font color=red>*</font>：<input type="text" id="txtliftid" name="txtliftid" value=""/>
+    维保人员id，[1000,1001](userjson)<font color=red>*</font>：<input type="text" id="txtuserjson" name="txtuserjson" value=""/>
+    <button onclick="tokenCall('frm9613', 'lift/binduser');return false">后台电梯绑定维保人员</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.14后台订单查询：http://139.196.50.25:8080/cloudisplay/service/order/list</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9614">
+    当前页(curpage)<font color=red>*</font>：<input type="text" id="txtcurpage" name="txtcurpage" value="1"/>
+    每页显示数量(pagesize)<font color=red>*</font>：<input type="text" id="txtpagesize" name="txtpagesize" value="5"/>
+    接单人员id(takeuser)：<input type="text" id="txttakeuser" name="txttakeuser" value=""/>
+    检索字段，支持orderid,mobileno,fault(term)：<input type="text" id="txtterm" name="txtterm" value=""/>
+    排序字段(sortord)：<input type="text" id="txtsortord" name="txtsortord" value=""/>
+    <button onclick="tokenCall('frm9614', 'order/list');return false">后台订单查询</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.15后台订单详情：http://139.196.50.25:8080/cloudisplay/service/order/detail</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9615">
+    订单id(orderid)<font color=red>*</font>：<input type="text" id="txtorderid" name="txtorderid" value=""/>
+    <button onclick="tokenCall('frm9615', 'order/detail');return false">后台订单详情</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.16后台订单指派：http://139.196.50.25:8080/cloudisplay/service/order/assign</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9616">
+    订单号(orderid)<font color=red>*</font>：<input type="text" id="txtorderid" name="txtorderid" value=""/>
+    维保人员id(takeuser)<font color=red>*</font>：<input type="text" id="txttakeuser" name="txttakeuser" value=""/>
+    <button onclick="tokenCall('frm9616', 'order/assign');return false">后台订单指派</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.17后台订单报表：null</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9617">
+    <label><font color="red">待设计</font></label><br>
+    <button onclick="tokenCall('frm9617', '');return false">后台订单报表</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.18微信维修上报：http://139.196.50.25:8080/cloudisplay/service/order/new</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9618-data">
+    终端代码(devicecode)<font color=red>*</font>：<input type="text" id="devicecode" name="devicecode" value=""/>
+    用户手机号(mobileno)<font color=red>*</font>：<input type="text" id="mobileno" name="mobileno" value="18901585270"/>
+    故障原因(fault)<font color=red>*</font>：<input type="text" id="fault" name="fault" value=""/>
+    故障图片（文件）(attachfile)<font color=red>*</font>：<input type="file" id="attachfile" name="attachfile" value=""/>
+    <button onclick="tokenCall('frm9618-data', 'order/new');return false">微信维修上报</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+<table width="100%">
+<tr>
+<td colspan="8" class="subtitleClose" title="点击可展开或关闭">9.6.19微信订单信息：null</td>
+</tr>
+<tbody style="display:none">
+<tr>
+<td><form id="frm9619">
+    <label><font color="red">参见后台订单详情</font></label><br>
+    <button onclick="tokenCall('frm9619', '');return false">微信订单信息</button>
+</form></td>
+</tr>
+</tbody>
+</table>
+
+</html>
